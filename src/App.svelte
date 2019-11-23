@@ -139,8 +139,9 @@
 <style>
   .attribution {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    margin-bottom: 1em;
+    margin: 0 20px;
   }
 
   button:disabled {
@@ -153,27 +154,54 @@
     font-size: 18px;
   }
 
+  h3 {
+    margin-top: 0;
+  }
+
+  header {
+    display: flex;
+    align-items: flex-start;
+  }
+
   .logo {
     height: 100px;
   }
 </style>
 
-<label>
-  Wake Word
-  <input bind:value={wakeWord} />
-</label>
+<header>
+  <div>
+    <label>
+      Wake Word
+      <input bind:value={wakeWord} />
+    </label>
 
-<label>
-  Wake Name
-  <input bind:value={wakeName} />
-</label>
+    <label>
+      Wake Name
+      <input bind:value={wakeName} />
+    </label>
+  </div>
 
-<div class="attribution">
-  Results from
-  <a href="http://duckduckgo.com" target="_blank">
-    <img alt="DuckDuckGo logo" class="logo" src="images/DuckDuckGoLogo.png" />
-  </a>
-</div>
+  <div class="attribution">
+    <div>Results from</div>
+    <a href="http://duckduckgo.com" target="_blank">
+      <img alt="DuckDuckGo logo" class="logo" src="images/DuckDuckGoLogo.png" />
+    </a>
+  </div>
+
+  <div class="instructions">
+    <h3>Examples of things you can ask:</h3>
+    <ul>
+      <li>Who is Wayne Gretzky?</li>
+      <li>Where is St. Louis?</li>
+      <li>Calculate 2 times 3</li>
+      <li>Set color red</li>
+      <li>Uppercase</li>
+      <li>Lowercase</li>
+      <li>Reset</li>
+      <li>Clear</li>
+    </ul>
+  </div>
+</header>
 
 {#each lines as line}
   <div style={style}>{line}</div>
