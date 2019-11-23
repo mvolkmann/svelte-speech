@@ -1,91 +1,136 @@
 <script>
+  // https://www.quora.com/How-can-I-use-DuckDuckGo-in-my-application-Is-there-any-API-for-the-same
+  //TODO: Add "Results from DuckDuckGo" with our logo (and link to the specific result page).
+
   const prompt = 'Please talk to me.';
   const synth = window.speechSynthesis;
 
   const textTransformMap = {
     lowercase: 'lowercase',
-    normal: 'none',
+    reset: 'none',
     uppercase: 'uppercase'
   };
   const textTransforms = Object.keys(textTransformMap);
+  console.log('App.svelte x: textTransforms =', textTransforms);
 
   let color = 'black';
   let lines;
   let textCase = 'none';
   let transcript;
 
-  let wakeName = 'Google';
   let wakeWord = 'Hey';
+  let wakeName = 'Browser';
   $: wakePhrase = wakeWord + ' ' + wakeName;
 
   $: style = `color: ${color}; text-transform: ${textCase}`;
   
+  function addLine(text) {
+    const index = lines.length - 1;
+    let line = text[0].toUpperCase() + text.substring(1);
+    if (!line.endsWith('.')) line += '.';
+    lines[index] = line;
+  }
+
   function clear() {
     lines = [prompt, ''];
   }
 
-  const caseInsensitiveStartsWith = (text, phrase) => text.toLowerCase().startsWith(phrase.toLowerCase());
+  function caseInsensitiveStartsWith(text, phrase) {
+    if (!text) return '';
+    return text.toLowerCase().startsWith(phrase.toLowerCase());
+  }
   
+  async function search(phrase) {
+    const encoded = encodeURIComponent(phrase);
+    const url = `http://localhost:1919/search/${encoded}`;
+    try {
+      const res = await fetch(url);
+      const json = await res.json();
+      console.log('App.svelte search: json =', json);
+
+      let text = json.AbstractText;
+      if (!text) {
+        const topic = json.RelatedTopics[0];
+        text = topic ? topic.Text : 'I do not know that';
+      }
+      addLine(text);
+      speak(text);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   function speak(phrase) {
     const utterance = new SpeechSynthesisUtterance(phrase);
     synth.speak(utterance);
   }
 
   function startListening() {
-    const sr = new webkitSpeechRecognition();
-    sr.interimResults = true;
-    sr.lang = 'en-US';
+    try {
+      const sr = new webkitSpeechRecognition();
+      sr.interimResults = true;
+      sr.lang = 'en-US';
 
-    sr.onresult = result => {
-      //console.log('App.svelte x: result.results =', result.results);
-      //const [[{transcript}]] = result.results;
-      const resultList = Array.from(result.results);
-      transcript = resultList.map(r => r[0].transcript).join(' ');
-      console.log('App.svelte x: transcript =', transcript);
-      console.log('App.svelte x: wakePhrase =', wakePhrase);
-    };
+      sr.onresult = result => {
+        //console.log('App.svelte x: result.results =', result.results);
+        //const [[{transcript}]] = result.results;
+        const resultList = Array.from(result.results);
+        transcript = resultList.map(r => r[0].transcript).join(' ');
+      };
 
-    //sr.onstart = () => console.log('got start');
-    sr.onend = () => {
-      //console.log('got end');
-      lines.push('');
-      lines = lines;
-      setTimeout(startListening);
-    };
-
-    sr.onspeechend = () => {
-      console.log('speechend: transcript =', transcript);
-      if (caseInsensitiveStartsWith(transcript, wakePhrase)) {
-        const command = transcript.substring(wakePhrase.length + 1).trim().toLowerCase();
-        console.log('App.svelte x: command =', command);
-        if (command === 'clear') {
-          clear();
-        } else if (command.startsWith('set color ')) {
-          color = command.split(' ')[2].toLowerCase();
-        } else if (textTransforms.includes(command)) {
-          textCase = textTransformMap[transcript];
-        } else if (command) {
-          console.log('App.svelte x: unsupported command');
-          sr.stop();
-          speak('Sorry Dave, I don\'t understand ' + command);
-        }
-      } else {
-        const index = lines.length - 1;
-        lines[index] = transcript[0].toUpperCase() + transcript.substring(1) + '.';
-      }
-    };
-
-    sr.onerror = err => {
-      if (err.error === 'no-speech') {
-        lines.push(prompt);
+      //sr.onstart = () => console.log('got start');
+      sr.onend = () => {
+        //console.log('got end');
+        lines.push('');
         lines = lines;
-      } else {
-        console.error(err);
-        alert(JSON.stringify(err));
-      }
-    };
+        setTimeout(startListening);
+      };
 
-    sr.start();
+      sr.onspeechend = () => {
+        if (!transcript) return;
+        console.log('onspeechend: transcript =', transcript);
+
+        if (caseInsensitiveStartsWith(transcript, wakePhrase)) {
+          const command = transcript.substring(wakePhrase.length + 1).trim().toLowerCase();
+          console.log('App.svelte x: command =', command);
+          if (command === 'clear') {
+            clear();
+          } else if (command.startsWith('set color ')) {
+            color = command.split(' ')[2].toLowerCase();
+          } else if (textTransforms.includes(command)) {
+            textCase = textTransformMap[command];
+            console.log('App.svelte x: textCase =', textCase);
+          } else if (command) {
+            search(command);
+            //console.log('App.svelte x: unsupported command');
+            //sr.stop();
+            //speak('Sorry Dave, I don\'t understand ' + command);
+          }
+        //} else {
+        //  search(transcript);
+        }
+
+        transcript = '';
+      };
+
+      sr.onerror = err => {
+        if (err.error === 'no-speech') {
+          const lastLine = lines[lines.length - 1];
+          if (lastLine !== prompt) {
+            lines.push(prompt);
+            lines = lines;
+          }
+        } else {
+          console.error(err);
+          alert(JSON.stringify(err));
+        }
+      };
+
+      sr.start();
+    } catch (e) {
+      const msg = `This browser is not supported.\n${e.message}.`;
+      alert(msg);
+    }
   }
 
   clear();
@@ -100,7 +145,7 @@
 
   div {
     font-family: sans-serif;
-    font-size: 36px;
+    font-size: 18px;
   }
 </style>
 
