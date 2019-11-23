@@ -10,7 +10,7 @@ app.get('/search/:query', async (req, res) => {
   const { query } = req.params;
   console.log('server.js query =', query);
   const encoded = encodeURIComponent(query);
-  const url = `https://api.duckduckgo.com/?q=${encoded}&format=json`;
+  const url = `https://api.duckduckgo.com/?q=${encoded}&format=json&t=svelte-speech`;
   console.log('App.svelte search: url =', url);
   try {
     const result = await fetch(url);

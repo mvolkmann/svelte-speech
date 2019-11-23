@@ -1,6 +1,7 @@
 <script>
   // https://duckduckgo.com/api
 
+  const calculate = 'calculate';
   const prompt = 'Please talk to me.';
   const synth = window.speechSynthesis;
 
@@ -87,7 +88,11 @@
         if (caseInsensitiveStartsWith(transcript, wakePhrase)) {
           const command = transcript.substring(wakePhrase.length + 1).trim().toLowerCase();
           console.log('App.svelte x: command =', command);
-          if (command === 'clear') {
+
+          if (command.startsWith(calculate)) {
+            const expression = command.substring(calculate.length + 1);
+            addLine(`${expression} = ${eval(expression)}`);
+          } else if (command === 'clear') {
             clear();
           } else if (command.startsWith('set color ')) {
             color = command.split(' ')[2].toLowerCase();
