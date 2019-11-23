@@ -1,6 +1,5 @@
 <script>
-  // https://www.quora.com/How-can-I-use-DuckDuckGo-in-my-application-Is-there-any-API-for-the-same
-  //TODO: Add "Results from DuckDuckGo" with our logo (and link to the specific result page).
+  // https://duckduckgo.com/api
 
   const prompt = 'Please talk to me.';
   const synth = window.speechSynthesis;
@@ -11,7 +10,6 @@
     uppercase: 'uppercase'
   };
   const textTransforms = Object.keys(textTransformMap);
-  console.log('App.svelte x: textTransforms =', textTransforms);
 
   let color = 'black';
   let lines;
@@ -25,14 +23,14 @@
   $: style = `color: ${color}; text-transform: ${textCase}`;
   
   function addLine(text) {
-    const index = lines.length - 1;
     let line = text[0].toUpperCase() + text.substring(1);
     if (!line.endsWith('.')) line += '.';
-    lines[index] = line;
+    lines.push(line);
+    lines = lines;
   }
 
   function clear() {
-    lines = [prompt, ''];
+    lines = [prompt];
   }
 
   function caseInsensitiveStartsWith(text, phrase) {
@@ -61,8 +59,10 @@
   }
 
   function speak(phrase) {
+    /*
     const utterance = new SpeechSynthesisUtterance(phrase);
     synth.speak(utterance);
+    */
   }
 
   function startListening() {
@@ -78,13 +78,7 @@
         transcript = resultList.map(r => r[0].transcript).join(' ');
       };
 
-      //sr.onstart = () => console.log('got start');
-      sr.onend = () => {
-        //console.log('got end');
-        lines.push('');
-        lines = lines;
-        setTimeout(startListening);
-      };
+      sr.onend = () => setTimeout(startListening);
 
       sr.onspeechend = () => {
         if (!transcript) return;
@@ -99,7 +93,6 @@
             color = command.split(' ')[2].toLowerCase();
           } else if (textTransforms.includes(command)) {
             textCase = textTransformMap[command];
-            console.log('App.svelte x: textCase =', textCase);
           } else if (command) {
             search(command);
             //console.log('App.svelte x: unsupported command');
@@ -116,6 +109,7 @@
       sr.onerror = err => {
         if (err.error === 'no-speech') {
           const lastLine = lines[lines.length - 1];
+          console.log('App.svelte onerror: lastLine =', lastLine);
           if (lastLine !== prompt) {
             lines.push(prompt);
             lines = lines;
@@ -138,6 +132,12 @@
 </script>
 
 <style>
+  .attribution {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1em;
+  }
+
   button:disabled {
     background-color: pink;
     color: gray;
@@ -146,6 +146,10 @@
   div {
     font-family: sans-serif;
     font-size: 18px;
+  }
+
+  .logo {
+    height: 100px;
   }
 </style>
 
@@ -158,6 +162,13 @@
   Wake Name
   <input bind:value={wakeName} />
 </label>
+
+<div class="attribution">
+  Results from
+  <a href="http://duckduckgo.com" target="_blank">
+    <img alt="DuckDuckGo logo" class="logo" src="images/DuckDuckGoLogo.png" />
+  </a>
+</div>
 
 {#each lines as line}
   <div style={style}>{line}</div>
