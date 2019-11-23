@@ -2,8 +2,7 @@
 
 This demonstrates using the Web Speech API in a Svelte app.
 
-Get a free Google API key at
-<https://developers.google.com/custom-search/v1/introduction#identify_your_application_to_google_with_api_key>.
+As of 11/23/19 this only works in the Chrome browser.
 
 To run this:
 
